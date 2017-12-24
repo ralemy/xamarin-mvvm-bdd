@@ -6,7 +6,22 @@ Once the repository is cloned, in the Docs/ directory there is a xamarin-boilerp
 
 The pdf file also contains general and introductionary instructions on how to use the MVVM framework to navigate between pages and to delegate the code-behind to a more testable ViewModel object.
 
-This work was inspired by [Rob Gibbens article for Specflow] (http://arteksoftware.com/bdd-tests-with-xamarin-uitest-and-specflow/)
+## Branches
 
-It is released under Apache 2.0 License. please see the LICENSE file for more information.
+The **Settings Branch** was checked out from _Boilerplate.V1.1_ tag. it demonstrates the following techniques:
+
+* Adding a native Settings object
+* Using constants inside XAML files
+* Using a Xamarin Backdoor to write tests against internal objects 
+* Creating double bindings between internal objects, ViewModels and Page components.
+* Allowing time for UI and Backend update in tests
+
+Based on the experience of this branch, a new _Boilerplate.V1.2_ tag is created, from which the future branches are checked out.
+
+
+# Credits
+
+This work was inspired by [Rob Gibbens article for Specflow] (http://arteksoftware.com/bdd-tests-with-xamarin-uitest-and-specflow/)
+# License
+This work is released under Apache 2.0 License. please see the LICENSE file for more information.
 
