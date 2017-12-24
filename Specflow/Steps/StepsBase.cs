@@ -1,6 +1,8 @@
 ﻿using TechTalk.SpecFlow;
 using Xamarin.UITest;
 using Specflow.Server;
+using Specflow.PageTestObjects;
+using System;
 
 namespace Specflow.Steps
 {
@@ -14,11 +16,22 @@ namespace Specflow.Steps
             app = FeatureContext.Current.Get<IApp>("App");
             Context = context;
         }
-        public StepsBase():this(ScenarioContext.Current){
-            
+
+        public T AddOrGetPageTO<T>() where T : AppPageTO
+        {
+            if (Context.ContainsKey(typeof(T).ToString()))
+                return Context.Get<T>();
+            var obj = Activator.CreateInstance(typeof(T), new object[] { app }) as T;
+            Context.Set(obj);
+            return obj;
+        }
+        public StepsBase() : this(ScenarioContext.Current)
+        {
+
         }
         [AfterScenario]
-        public void StopRestServer(){
+        public void StopRestServer()
+        {
             if (Context.ContainsKey(typeof(RestTestServer).ToString()))
                 Context.Get<RestTestServer>().Stop();
         }

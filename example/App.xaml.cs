@@ -19,6 +19,7 @@ namespace example
         {
             var nav = Initializer.GetDependency<INavigationManager>();
             nav.SetMain(page);
+            nav.Register(SettingsPage.PageKey, typeof(SettingsPage));
             return page;
         }
 
@@ -26,6 +27,7 @@ namespace example
         {
             Initializer.SetupDI();
             Initializer.Register<MainPageVM>();
+            Initializer.Register<SettingsPageVM>();
         }
 
     } 

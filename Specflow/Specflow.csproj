@@ -57,6 +57,10 @@
     <None Include="packages.config" />
     <None Include="App.config" />
     <None Include="Features\SanityTest.feature" />
+    <None Include="Features\Pages\SettingsPage.feature">
+      <Generator>SpecFlowSingleFileGenerator</Generator>
+      <LastGenOutput>SettingsPage.feature.cs</LastGenOutput>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\iOS\example.iOS.csproj">
@@ -91,6 +95,16 @@
     <Compile Include="_init\InstrumentsRunner.cs" />
     <Compile Include="_init\Simulator.cs" />
     <Compile Include="_init\TestHelpers.cs" />
+    <Compile Include="Features\Pages\SettingsPage.feature.cs">
+      <DependentUpon>SettingsPage.feature</DependentUpon>
+    </Compile>
+    <Compile Include="Features\Pages\SettingsPageFeature.cs" />
+    <Compile Include="Steps\SettingsPage\Scenario01.cs" />
+    <Compile Include="PageTestObjects\Pages\SettingsPageTO.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Features\Pages\" />
+    <Folder Include="Steps\SettingsPage\" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>
