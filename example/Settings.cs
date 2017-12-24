@@ -1,6 +1,7 @@
 ﻿using System;
 using example.Models;
 using MVVMFramework.Statics;
+using Newtonsoft.Json.Linq;
 using Plugin.Settings;
 using Plugin.Settings.Abstractions;
 
@@ -28,5 +29,14 @@ namespace example.Helpers
             }
         }
 
+    }
+    public static class SpecFlowBackdoor
+    {
+        public static string Execute(JObject msg){
+            switch((string)msg[Backdoor.Key]){
+                default:
+                    return "Unknown Key" + (string)msg[Backdoor.Key];
+            }
+        }
     }
 }

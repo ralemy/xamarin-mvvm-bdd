@@ -3,6 +3,7 @@ namespace MVVMFramework.Statics
 {
     public static class Backdoor
     {
+        public const string Key = "key";
     }
     public static class SettingsDefaults
     {
@@ -12,6 +13,11 @@ namespace MVVMFramework.Statics
     {
         public const string MainPage = "MainPage";
         public const string SettingsPage = "SettingsPage";
+    }
+    public static class UIStrings
+    {
+        public const string SettingsButton = "Settings";
+        public const string UseHttps = "Use Https";
     }
     public static class UIID
     {

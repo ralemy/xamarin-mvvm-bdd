@@ -316,6 +316,32 @@ The xaml file in the Main page needs to have a button that invokes that command:
 	</ContentPage.Content>
 ~~~
 
+# Use of constants in XAML files
+
+The example above reveals an interesting challenge. We have the MVVMFrameworks.Statics to keep all string constants. this is useful because both C# code and Specflow Tests can access the same constants, and therefore if one changes the other won't break. but how to extend this to XAML files? it would be very useful if the constants would be available in XAML files as well.
+
+The technique to achieve this is through static namespaces. we add a namespace to the XAML file and then access the constants like below:
+
+~~~xml
+<?xml version="1.0" encoding="UTF-8"?>
+<ContentPage 
+	xmlns="http://xamarin.com/schemas/2014/forms"
+	xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+	xmlns:static = "clr-namespace:MVVMFramework.Statics;assembly=MVVMFramework"
+	x:Class="example.Pages.MainPage">
+	<ContentPage.Content>
+        <StackLayout Padding="30">
+            <Button AutomationId="{x:Static static:UIID.SettingsButton}" 
+                    Text="{x:Static static:UIStrings.SettingsButton}" 
+                    Command="{Binding SettingsCommand}"  />
+        </StackLayout>
+	</ContentPage.Content>
+</ContentPage>
+~~~
+
+Pay special attention to the line marked with **_xmlns:static_**. This line creates a connection to MVVMFramework.Statics namespace which is part of MVVMFramework assembly. 
+
+
 The test will now pass. We are ready for the next steps.
 
 # Binding the Settings Page to the Settings Object 
@@ -337,22 +363,50 @@ The easy test for this section is to check that there is an element on the Setti
 
 ## Testing a SwitchCell Setting
 
-To be able to test the last step, the ISettingsScreen and SettingsScreen classes have to be refactored to expose the UseHttpSwitch element. Most unfortunately, the Switch Element's AutomationID is not exposed. The only marker available is the text in the label associated with the switch, but that element is not useful to test the tapping of the switch. 
+To be able to test the last step, the SettingsPageTO class has to be refactored to expose the UseHttpSwitch element. Most unfortunately, the Switch Element's AutomationID is not exposed for now. The only marker available is the text in the label associated with the switch, but that element is not useful to test the tapping of the switch. 
 
-To make matters worse, the switch in iOS is the sibling of text element, but in android is the sibling of its parent. fortunately, the page test object makes it possible to hide these differences.
+To make matters worse, the switch in iOS is the sibling of text element, but in android is the sibling of its parent. to account for all of this, the AppPageTO exposes a GetSwitch() function, which takes a label and returns the switch that can be tapped, based on the device in use. Under the hood, here is how it looks:
 
 ~~~csharp
- public Func<AppQuery, AppQuery> UseHttpsSwitch
+ public Func<AppQuery, AppQuery> GetSwitch(string label)
         {
-            get
-            {
-                if (app is Xamarin.UITest.Android.AndroidApp)
-                    return c => c.Text("Use Https").Parent(1).Child(1);
-                else 
-                    return c => c.Marked("Use Https").Index(1);
-            }
+            if (IsAndroidApp())
+                return c => c.Text(label).Parent(1).Child(1);
+            return c => c.Marked(label).Index(1);
         }
 ~~~
+
+So, to get the Switch in the settings page, we need to add the following property to it
+
+~~~csharp
+        public Func<AppQuery, AppQuery> UseHttpsSwitch 
+        	{ get => GetSwitch(UIStrings.UseHttps); }
+~~~
+
+The test will fail properly. for it to pass, we need to define the XAML for the Settings Page.
+
+~~~xml
+<?xml version="1.0" encoding="UTF-8"?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms" 
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" 
+    xmlns:static = "clr-namespace:MVVMFramework.Statics;assembly=MVVMFramework"
+    x:Class="example.Pages.SettingsPage">
+	<ContentPage.Content>
+        <TableView Intent="Settings">
+            <TableView.Root>
+                <TableSection>
+                    <SwitchCell Text="{x:Static static:UIStrings.UseHttps}"
+                        On="{Binding UseHttps}" />
+                </TableSection>
+            </TableView.Root>
+        </TableView>
+	</ContentPage.Content>
+</ContentPage>
+~~~
+
+Note the **Intent** of the _TableView_ element that is being set to _Settings_, and the use of Static directive to get the text from MVVMFramework.Statics namespace.
+
+The tests pass, and we are assured that there is a Settings page, with a Switch Cell on it and the label of _Use Https_. now we need to make sure that the tapping of the switch will actually change the settings.
 
 # Xamarin Backdoors
 Now that we can tap the switch, we need to ensure that such tapping will change the Setting bound to the switch. i.e.:
@@ -362,59 +416,48 @@ Now that we can tap the switch, we need to ensure that such tapping will change 
 Scenario: Should have a switch to Use Https
     Given I am in Settings page
     And  the settings page has a switch to select Https protocol
-    And  the 'UseHttps' Setting is 'true'
-    When I tap the switch 
-    Then the 'UseHttps' Setting will change to 'false'
+    And  I record the value of Settings.UseHttps
+    When I tap the Use Https switch 
+    Then the Value of the Settings.UseHttps will toggle
 ~~~
 
 So this tests needs a way to read the app settings, but those are internal to the app and not accessible from outside. for this, one should employ the concept of [Backdoors][], which allow the test platform to execute a function inside the app and return a value.
 
-To define backdoors, Few steps need to be taken.
+To define backdoors, Few steps need to be taken. 
 
-* Right click on the Preferences directory of the Droid project and go to Edit Preferences, search for "export" and add Mono.Android.Export to the project.
-
-![Export dll](images/Export-Reference.png)
-
-* For the Android Project, in the MainActivity.cs add a method with Export (Java.Interop.Export) annotation:
+* Add a SpecflowBackdoor class with an Execute function to the example.Helpers namespace. this will hold the shared code:
 
 ~~~csharp
-        [Export]
-        public string ExamineSettings(string key)
-        {
-            switch (key)
-            {
-                case "UseHttps":
-                    return Helpers.Settings.UseHttps ? "true" : "false";
-                case "SetHttps":
-                    Helpers.Settings.UseHttps = true;
-                    return "true";
-                case "ClearHttps":
-                    Helpers.Settings.UseHttps = false;
-                    return "false";
+    public static class SpecFlowBackdoor
+    {
+        public static string Execute(JObject msg){
+            switch((string)msg[Backdoor.Key]){
                 default:
-                    return "Unknown key " + key;
+                    return "Unknown Key" + (string)msg[Backdoor.Key];
             }
+        }
+    }
+~~~
+
+* For the Android Project, The Mono.Android.Export should be referenced in the Droid project. this was done in boilerplate and is demonstrated with screenshots in that document.
+* In the MainActivity.cs add a method with Export (Java.Interop.Export) annotation:
+
+~~~csharp
+        [Export(MVVMFramework.Statics.Fixtures.SpecflowBackdoor)]
+        public string SpecflowBakckdoor(string json)
+        {
+            return Helpers.SpecFlowBackdoor.Execute(JObject.Parse(json));
         }
 ~~~
 
 * For iOS project, in AppDelegate.cs, add an Export decorated method.
 
 ~~~csharp
-[Export("ExamineSettings:")]
-        public NSString ExamineSettings(NSString key)
-        {
-            switch(key){
-                case "UseHttps":
-                    return new NSString(Helpers.Settings.UseHttps ? "true" : "false");
-                case "SetHttps":
-                    Helpers.Settings.UseHttps = true;
-                    return new NSString("true");
-                case "ClearHttps":
-                    Helpers.Settings.UseHttps = false;
-                    return new NSString("false");
-                default:
-                    return new NSString("Unknown key " + key);
-            }
+[Export(MVVMFramework.Statics.Fixtures.SpecflowBackdoor + ":")]
+public NSString SpecflowBakckdoor(NSString json){
+ return new
+   NSString(Helpers.SpecFlowBackdoor.Execute(JObject.Parse(json)));
+ }
 ~~~
 
 * Note a few nuances with the iOS annotation:
@@ -425,19 +468,18 @@ To define backdoors, Few steps need to be taken.
 	* It should be turned **toString()** before assertions.
 	* Its type is Newtonsoft.Json.Linq.JValue
 
-Because of these differences, invoking the backdoor is different between iOS and Android and an Invoke function is needed in StepsBase to encapsulate that:
+Because of these differences, invoking the backdoor is different between iOS and Android. The AppPageTO class abstracts this complication with helper Invoke functions.
 
 ~~~csharp
-        public string Invoke(string id, string param)
-        {
-            if (app is Xamarin.UITest.Android.AndroidApp)
-                return app.Invoke(id, param).ToString();
-            return app.Invoke(id + ":", param).ToString();
-        }
+public string Invoke(string methodName, JObject json) =>
+  (IsAndroidApp()
+  ? app.Invoke(methodName, json.ToString()).ToString()
+  : app.Invoke(methodName + ":", json.ToString())).ToString();
 ~~~
 
 ## Test steps for Use Https switch
 
+We can now define the steps for our second scenario. 
 ~~~csharp
     public class ShouldHaveASwitchToUseHttps : StepsBase
     {

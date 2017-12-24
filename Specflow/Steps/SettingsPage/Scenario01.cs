@@ -33,5 +33,12 @@ namespace Specflow.Steps.SettingsPage
             var page = AddOrGetPageTO<SettingsPageTO>();
             page.WaitForLoad();
         }
+
+        [Then(@"the Settings Page has a UseHttps Switch")]
+        public void ThenTheSettingsPageHasAUseHttpsSwitch()
+        {
+            var page = AddOrGetPageTO<SettingsPageTO>();
+            app.WaitForElement(page.UseHttpsSwitch);
+        }
     }
 }

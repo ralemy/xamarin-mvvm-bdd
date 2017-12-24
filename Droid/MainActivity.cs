@@ -7,6 +7,8 @@ using Android.Runtime;
 using Android.Views;
 using Android.Widget;
 using Android.OS;
+using Java.Interop;
+using Newtonsoft.Json.Linq;
 
 namespace example.Droid
 {
@@ -29,5 +31,12 @@ namespace example.Droid
         {
             base.OnActivityResult(requestCode, resultCode, data);
         }
+
+        [Export(MVVMFramework.Statics.Fixtures.SpecflowBackdoor)]
+        public string SpecflowBakckdoor(string json)
+        {
+            return example.Helpers.SpecFlowBackdoor.Execute(JObject.Parse(json));
+        }
+
     }
 }

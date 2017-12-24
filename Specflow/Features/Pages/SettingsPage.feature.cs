@@ -81,6 +81,8 @@ this.ScenarioSetup(scenarioInfo);
     testRunner.When("I press the \'Settings\' button", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
 #line 10
     testRunner.Then("the application will Navigate to Settings Page", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
+#line 11
+    testRunner.And("the Settings Page has a UseHttps Switch", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
             this.ScenarioCleanup();
         }

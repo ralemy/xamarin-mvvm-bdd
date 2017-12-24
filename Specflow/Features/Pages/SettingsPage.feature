@@ -8,3 +8,4 @@ Scenario: 01_Should Navigate from Main to Settings Page
     And There is a 'Settings' button on the page
     When I press the 'Settings' button
     Then the application will Navigate to Settings Page
+    And the Settings Page has a UseHttps Switch
