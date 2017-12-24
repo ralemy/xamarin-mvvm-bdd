@@ -86,6 +86,29 @@ this.ScenarioSetup(scenarioInfo);
 #line hidden
             this.ScenarioCleanup();
         }
+        
+        [NUnit.Framework.TestAttribute()]
+        [NUnit.Framework.DescriptionAttribute("02_Should have a switch to Use Https")]
+        [NUnit.Framework.CategoryAttribute("Settings_Page")]
+        public virtual void _02_ShouldHaveASwitchToUseHttps()
+        {
+            TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("02_Should have a switch to Use Https", new string[] {
+                        "Settings_Page"});
+#line 14
+this.ScenarioSetup(scenarioInfo);
+#line 15
+    testRunner.Given("I am in Settings page", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Given ");
+#line 16
+    testRunner.And("the settings page has a switch to select Https protocol", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
+#line 17
+    testRunner.And("I record the value of Settings.UseHttps", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
+#line 18
+    testRunner.When("I tap the Use Https switch", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
+#line 19
+    testRunner.Then("the Value of the Settings.UseHttps will toggle", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
+#line hidden
+            this.ScenarioCleanup();
+        }
     }
 }
 #pragma warning restore

@@ -101,6 +101,7 @@
     <Compile Include="Features\Pages\SettingsPageFeature.cs" />
     <Compile Include="Steps\SettingsPage\Scenario01.cs" />
     <Compile Include="PageTestObjects\Pages\SettingsPageTO.cs" />
+    <Compile Include="Steps\SettingsPage\Scenario02.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Features\Pages\" />

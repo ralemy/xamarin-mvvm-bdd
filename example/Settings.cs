@@ -34,6 +34,8 @@ namespace example.Helpers
     {
         public static string Execute(JObject msg){
             switch((string)msg[Backdoor.Key]){
+                case Backdoor.GetUseHttps:
+                    return Settings.UseHttps.ToString();
                 default:
                     return "Unknown Key" + (string)msg[Backdoor.Key];
             }

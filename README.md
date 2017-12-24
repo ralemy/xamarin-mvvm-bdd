@@ -2,6 +2,15 @@
 
 This branch is based on the Boilerplate.V1.1 tag, and shows how to add Settings to the app and how to test it using the BDD framework and Xamarin Backdoors. refer to the Docs/ directory for the markdown file that explains the steps.  
 
+The following techniques are demonstrated in this branch
+
+* Adding a native Settings object
+* Using constants inside XAML files
+* Using a Xamarin Backdoor to write tests against internal objects 
+* Creating double bindings between internal objects, ViewModels and Page components.
+* Allowing time for UI and Backend update in tests
+
+
 # Xamarin MVVM App delevopment using BDD
 
 This is an effort to provide step by step demonstration of how to develop a Xamarin app for iOS and Android using MVVM architecture and Behaviour Driven Development Methodology. 

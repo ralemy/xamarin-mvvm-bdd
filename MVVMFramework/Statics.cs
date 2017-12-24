@@ -4,6 +4,8 @@ namespace MVVMFramework.Statics
     public static class Backdoor
     {
         public const string Key = "key";
+        public const string Payload = "payload";
+        public const string GetUseHttps = "GetUseHttps";
     }
     public static class SettingsDefaults
     {

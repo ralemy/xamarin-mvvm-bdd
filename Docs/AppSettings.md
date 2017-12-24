@@ -413,7 +413,7 @@ Now that we can tap the switch, we need to ensure that such tapping will change 
 
 ~~~gherkin
 @Settings_Page
-Scenario: Should have a switch to Use Https
+Scenario: 02_Should have a switch to Use Https
     Given I am in Settings page
     And  the settings page has a switch to select Https protocol
     And  I record the value of Settings.UseHttps
@@ -421,7 +421,7 @@ Scenario: Should have a switch to Use Https
     Then the Value of the Settings.UseHttps will toggle
 ~~~
 
-So this tests needs a way to read the app settings, but those are internal to the app and not accessible from outside. for this, one should employ the concept of [Backdoors][], which allow the test platform to execute a function inside the app and return a value.
+We add the above to the SettingsPage.Feature file. So now this test needs a way to read the app settings, but those are internal to the app and not accessible from outside. for this, one should employ the concept of [Backdoors][], which allow the test platform to execute a function inside the app and return a value.
 
 To define backdoors, Few steps need to be taken. 
 
@@ -477,118 +477,126 @@ public string Invoke(string methodName, JObject json) =>
   : app.Invoke(methodName + ":", json.ToString())).ToString();
 ~~~
 
+The way the backdoor works in this arrangement is that the tests will invoke the backdoor with a json object that has a _Backdoor.Key_ and a _Backdoor.Payload_. the key is a string and the payload can be anything, from a simple string to a complex json object. the switch statement in SpecflowBackdoor.Execute() will then decide how to interpret the payload. The AppPageTO object has overloaded Invoke() functions to address the more common use cases, such as key only, string payload, and constructed JObject.
+
+
 ## Test steps for Use Https switch
 
-We can now define the steps for our second scenario. 
+We can now define the steps for our second scenario. Add a Specflow.Specflow Step Definition to the Specflow.Steps.SettingsPage directory, run it and fill the steps in.
+
 ~~~csharp
-    public class ShouldHaveASwitchToUseHttps : StepsBase
+    [Binding]
+    public class Scenario02 : StepsBase
     {
-        ISettingsScreen page;
         [Given(@"I am in Settings page")]
         public void GivenIAmInSettingsPage()
         {
-            page = FeatureContext.Current.Get<ISettingsScreen>();
-            if(app.Query("SettingsButton").Length > 0)
-            {
-                app.Tap("SettingsButton");
-                page.WaitForLoad();
-            }
-            app.Query(page.PageContainer).Length.ShouldEqual(1);
+            AddOrGetPageTO<MainPageTO>().GotoSettingsPage();
+            AddOrGetPageTO<SettingsPageTO>().WaitForLoad();
         }
 
         [Given(@"the settings page has a switch to select Https protocol")]
         public void GivenTheSettingsPageHasASwitchToSelectHttpsProtocol()
         {
-            app.Query(page.UseHttpsSwitch).Length.ShouldEqual(1);
+            app.WaitForElement(AddOrGetPageTO<SettingsPageTO>().UseHttpsSwitch);
         }
 
-        [Given(@"the '(.*)' Setting is '(.*)'")]
-        public void GivenTheSettingIs(string useHttps, string state)
+
+        [Given(@"I record the value of Settings\.UseHttps")]
+        public void GivenIRecordTheValueOfSettings_UseHttps()
         {
-            Invoke("ExamineSettings", "SetHttps"); //will set the state to true
+            var origin = AddOrGetPageTO<SettingsPageTO>().Invoke(Backdoor.GetUseHttps);
+            Context.Add("origin",Convert.ToBoolean(origin));
         }
 
-        [When(@"I tap the switch")]
-        public void WhenITapTheSwitch()
+        [When(@"I tap the Use Https switch")]
+        public void WhenITapTheUseHttpsSwitch()
         {
-            app.Tap(page.UseHttpsSwitch);
+            app.Tap(AddOrGetPageTO<SettingsPageTO>().UseHttpsSwitch);
         }
 
-        [Then(@"the '(.*)' Setting will change to '(.*)'")]
-        public void ThenTheSettingWillChangeTo(string useHttps0, string @false)
+        [Then(@"the Value of the Settings\.UseHttps will toggle")]
+        public void ThenTheValueOfTheSettings_UseHttpsWillToggle()
         {
-            Invoke("ExamineSettings", "UseHttps").ShouldEqual("false");
+            var result = AddOrGetPageTO<SettingsPageTO>().Invoke(Backdoor.GetUseHttps);
+            Convert.ToBoolean(result).ShouldEqual(!Context.Get<Boolean>("origin"));
         }
-
     }
 ~~~
+So we need to have our backdoor return the UseHttps setting when invoked with Backdoor.GetUseHttps key.
 
-The test fails, because the switch and the setting are not connected to each other. So we can create a binding between the switch and its ViewModel
+~~~csharp
+   public static string Execute(JObject msg){
+     switch((string)msg[Backdoor.Key]){
+         case Backdoor.GetUseHttps:
+             return Settings.UseHttps.ToString();
+         default:
+             return "Unknown Key" + (string)msg[Backdoor.Key];
+      }
+   }
+~~~
+
+The test fails properly, because the switch and the setting are not connected to each other. So we can create a binding between the switch and its ViewModel
 
 ~~~xml
-   <SwitchCell Text="Use Https" On="{Binding UseHttps}" AutomationId="UseHttpsSwitch"/>
+<TableSection>
+   <SwitchCell Text="{x:Static static:UIStrings.UseHttps}"
+                        On="{Binding UseHttps}" />
+</TableSection>
 ~~~
 
 In ViewModel, the changes to the UseHttps property should be delegated to Settings object, which will in turn delegate it to AppSettings.
 
 ~~~csharp
-        public bool UseHttps{
-            get => Settings.UseHttps;
-            set
-            {
-                if (Settings.UseHttps == value) return;
-                Settings.UseHttps = value;
-                RaisePropertyChanged("UseHttps");
-            }
-        }
+bool _useHttps = Settings.UseHttps;
+public bool UseHttps
+{
+    get => _useHttps;
+    set
+    {
+        if (_useHttps == value) return;
+        _useHttps = value;
+        Settings.UseHttps = value;
+        RaisePropertyChanged(nameof(UseHttps));
+    }
+}
 ~~~
 
 While there is doublebinding between the ViewModel and the Switch element, there is no double binding between the Settings and the Switch element. i.e. if one directly sets Settings.UseHttps to false, the switch won't change, but changing ViewModel.UseHttps to false will change the Switch.
 
 Settings <------- ViewModel <==========> Switch
 
-Therefore, we have to refactor our test to pass:
-# Passing Tests
-~~~gherkin
-@Settings_Page
-Scenario: 02 Should have a switch to Use Https
-    Given I am in Settings page
-    And  the settings page has a switch to select Https protocol
-    And  I record the state of the UseHttps Setting
-    When I tap the switch 
-    Then the UseHttps Setting will toggle
-~~~
-
-And the Step code for these would be
+To create proper doublebinding all the way, we need to listen to SettingsChanged event and update ourselves. we will use reflection to findout which setting has changed and will act accordingly.
 
 ~~~csharp
-...
-        private string InitialUseHttpsStatus;
-...
-        [Given(@"I record the state of the UseHttps Setting")]
-        public void GivenIRecordTheStateOfTheUseHttpsSetting()
-        {
-            InitialUseHttpsStatus = Invoke("ExamineSettings", "UseHttps");
-        }
-
-        [When(@"I tap the switch")]
-        public void WhenITapTheSwitch()
-        {
-            app.Tap(page.UseHttpsSwitch);
-
-        }
-
-        [Then(@"the UseHttps Setting will toggle")]
-        public void ThenTheUseHttpsSettingWillToggle()
-        {
-            app.WaitFor(() => Invoke("ExamineSettings", "UseHttps") ==
-                        (InitialUseHttpsStatus == "false" ? "true" : "false")
-                        , "Didn't change the Setting");
-        }
+public SettingsPageVM(INavigationManager navigator) : base()
+{
+    Navigator = navigator;
+    Settings.SettingsChanged += (sender, e) =>
+    {
+        var property = this.GetType().GetProperty(e.key);
+        if (property?.GetValue(this, null) != e.value)
+            property?.SetValue(this, e.value);
+    };
+}
 ~~~
 
-Notice the app.WaitFor() call that allows time for the bindings to take effect for change in Switch to result in change in Settings.
+The tests should pass, but they may not. that is because there is a delay between tapping the switch and all the underlying stuff that has to happen. We need to change the last step to wait a bit before deciding that the element was not tapped.
 
+~~~csharp
+[Then(@"the Value of the Settings\.UseHttps will toggle")]
+public void ThenTheValueOfTheSettings_UseHttpsWillToggle()
+{
+    var page = AddOrGetPageTO<SettingsPageTO>();
+    var expected = !Context.Get<bool>("originalUseHttps");
+    app.WaitFor(() =>
+     Convert.ToBoolean(page.Invoke(Backdoor.GetUseHttps)) == expected,
+                "Use Https Value did not change");
+}
+~~~
+
+# Next Steps
+Adding other types of settigs controls is pretty much the same. _EnrtyCell_ is used for Text, Url, email, and Password. _ViewCell_ can be used for customized controls. Refer to the Xamarin documentation for more detail. bottom line, every setting needs to have a representaion in the ViewModel, and one in the Settings singleton. The backdoor, the Id and label texts, and other constants are supported by the MVVMFrameworks.Statics namespace.
 
 [Xam.Plugins.Settings]: https://jamesmontemagno.github.io/SettingsPlugin/GettingStarted.html
 [Backdoors]: https://developer.xamarin.com/guides/testcloud/uitest/working-with/backdoors/

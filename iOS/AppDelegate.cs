@@ -26,8 +26,8 @@ namespace example.iOS
         }
 
         [Export(MVVMFramework.Statics.Fixtures.SpecflowBackdoor + ":")]
-        public string SpecflowBakckdoor(string json){
-            return example.Helpers.SpecFlowBackdoor.Execute(JObject.Parse(json));
+        public NSString SpecflowBakckdoor(NSString json){
+            return new NSString(Helpers.SpecFlowBackdoor.Execute(JObject.Parse(json)));
         }
     }
 }
