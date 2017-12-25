@@ -1,21 +1,9 @@
 [TOC]
 
 # Adding REST clients to Xamarin app
-Http communication with backend servers, including RESTFul calls, GET and POST calls, and Websockets
+Http communication with backend servers, including RESTFul calls, Websockets, and message brokers are some of the most common use cases in mobile applications. 
 
-Start by adding the [RestSharp][] package to the android and iOS projects. This package will provide many common functionalities required for REST connection. These include:
-
-* Automatic XML and JSON deserialization
-* Supports custom serialization and deserialization via ISerializer and IDeserializer
-* Fuzzy element name matching ('product_id' in XML/JSON will match C# property named 'ProductId')
-* Automatic detection of type of content returned
-* GET, POST, PUT, PATCH, HEAD, OPTIONS, DELETE, COPY supported
-* Other non-standard HTTP methods also supported
-* OAuth 1, OAuth 2, Basic, NTLM and Parameter-based Authenticators included
-	* Supports custom authentication schemes via IAuthenticator
-* Multi-part form/file uploads
-
-Before starting to send and receive messages, there is some groundwork that needs to be in place.
+The payload of such messages is most commonly JSON. so we start by an overview of handling JSON objects and translating them to C# Objects, maps, or string representations.
 
 # Handling JSON
 
@@ -180,17 +168,53 @@ public class myObject{
 	public MyProperty SomeProperty {get; set;}
 }
 ~~~
+# Checking for Connection
 
+All the techiques and packages would be useless if there is no connection to Internet. this may happen for many reasons:
+
+* The app is not allowed to use any Internet connection
+* The app is only allowed to use Wi-Fi, while cellular connection is the only one available
+* The device is out of coverage for WiFi and cellular.
+* The device is in Airplane mode
+
+Simplest way to just check if the device is connected is by using the [Connectivity Plugin][] which Xamarin includes when creating the project. Here is the snippet on checking if a connection is available:
+
+~~~csharp
+public bool DoIHaveInternet()
+{
+    return CrossConnectivity.Current.IsConnected;
+}
+~~~
+ 
+ Read the manual of [Connectivity Plugin][] to see other options such as checking the type and bandwidth of connection.
+ 
+ 
 # BDD Testing RESTful calls
+
+Start by adding the [RestSharp][] package to the android and iOS projects. This package will provide many common functionalities required for REST connection. These include:
+
+* Automatic XML and JSON deserialization
+* Supports custom serialization and deserialization via ISerializer and IDeserializer
+* Fuzzy element name matching ('product_id' in XML/JSON will match C# property named 'ProductId')
+* Automatic detection of type of content returned
+* GET, POST, PUT, PATCH, HEAD, OPTIONS, DELETE, COPY supported
+* Other non-standard HTTP methods also supported
+* OAuth 1, OAuth 2, Basic, NTLM and Parameter-based Authenticators included
+	* Supports custom authentication schemes via IAuthenticator
+* Multi-part form/file uploads
+
+Before starting to send and receive messages, there is some groundwork that needs to be in place.
 
 To test for restful calls, there must be a server such that the test framework can assert sending and receiving of messages. the test framework should be able to start the server, execute an action that should send a known payload to a known endpoint, assert that the message arrived with the correct payload, and close the server.
 
 ## Setting up the test Restful Server.
 
-* Add the [Grapevine][] and [RestSharp][] packages to the Specflow project. 
-* Add a folder named Server to the Specflow project.
-* Move the RestTestServer.cs and RestServerFeatureBase files here
-* Write a sanity feature for the REST server
+Most of the groundwork has already been done in the master branch:
+
+* Added the [Grapevine][] and [RestSharp][] packages to the Specflow project. 
+* Added a folder named Server to the Specflow project.
+* Moved the RestTestServer.cs and RestServerFeatureBase files here
+* Wrote a sanity feature for the REST server
 
 ~~~gherkin
 Feature: Rest Server Sanity
@@ -269,66 +293,40 @@ Scenario: Start and Stop Rest server
 
 # Testing the communication between App and Server
 
-Start with the Features file, as always:
+Start with the Features file, as always. We put a WebCommunications Specflow.Specflow feature file in Specflow.features:
 
 ~~~gherkin
-Feature: Rest Api communication
-    the app needs to be able to consume RESTful apis 
-    in order to send and receive information
-    	
-@rest_api
-Scenario: Should Send data to REST Server
-	Given The REST Server is running
-    And I have added a '/api/connection' endpoint to return 'connection ok' 
-    And I have configured the app for use of REST server endpoint
-	And Am in the main page
-	When I press Send data button
-	Then The server will be called at the endpoint
+Feature: WebCommunications
+    As an app developer
+    I need to know how to communicate with Web resources
+    Through RESTful interfaces, Sockets, or AMQP broker.
+	
+@Restful
+Scenario: 01_Should be able to send data using HTTP.GET 
+	Given I am running a RestTestServer
+    And   I have a button on Mainpage to call RestTestServer
+    And   I have configured the App for RestCall
+    And   I have registered an endpoint with the RestTestServer
+    When  I tap the button
+    Then  The RestTestServer is called with correct payload
+
 ~~~
 
-The second part of the feature class is special. it is a FeatureBase that is also a RestServerFeatureBase, but multiple inheritence is not allowed. therefore, it has to basically implement the RestServerFeatureBase
+The second part of the feature class is also added as usual
 
 ~~~csharp
-public partial class RestApiFeature : FeatureBase
+    public partial class WebCommunicationsFeature :FeatureBase
     {
-        private RestTestServer RestServer;
-
-        public RestApiFeature(Platform p, string iOSSim, bool reset)
-            : base(p, iOSSim, reset)
+        public WebCommunicationsFeature(Platform p, string i, bool r)
+            :base(p,i,r)
         {
-            var Serverbase = new RestServerFeatureBase("3434");
-            RestServer = Serverbase.RestServer;
-        }
-
-        [TestFixtureSetUp]
-        public void StartRestServer()
-        {
-            RestServer.LogToConsole().Start();
-        }
-        [TestFixtureTearDown]
-        public void StopRestServer(){
-            RestServer.Stop();
-        }
-
-        [SetUp]
-        public void AddServerToContext()
-        {
-            FeatureContext.Current.Add("RestTestServer", RestServer);
-        }
-
-        [TearDown]
-        public void RemoveServerFromContext()
-        {
-            FeatureContext.Current.Remove("RestTestServer");
         }
     }
 ~~~
 
-Note that this file should be edited if the Server is going to listen to any port other than 3434.
-
 ## Accessing the server from simulators
 
-The Restserver will be thus running on port 3434 of the local machine, but since the host is set to 0.0.0.0, it will bind to all networks (not just localhost) and will be accessible from Android emulators and iOS simulators. However, the ip address is needed for the devices to communicate with endpoints. The RestTestServer exposes a GetLocalIP() method that implements one way to achieve this:
+The Restserver will be running on port 3434 of the local machine, but since the host is set to 0.0.0.0, it will bind to all networks (not just localhost) and will be accessible from Android emulators and iOS simulators. However, the ip address is needed for the devices to communicate with endpoints. The RestTestServer exposes a GetLocalIP() method that implements one way to achieve this:
 
 ~~~csharp
 public string GetLocalIP()
@@ -343,68 +341,143 @@ public string GetLocalIP()
             return localIP;
         }
 ~~~
+
 This is not guaranteed to work everywhere, but pretty much does. for a discussion and alternative methods of getting the local IP, one can start from the relevant [Stackflow Discussion](https://stackoverflow.com/questions/6803073/get-local-ip-address). 
 
 LocalIP is needed if a physical device is being tested, emulators also work with that but if only emulators are being tested there is a simpler way: Android simulators use 10.0.2.2 for communicating with the host, and iOS just can use local host. in StepsBase class there is a HostAddress() method that returns the appropriate string based on the operating system under test.
 
-# Configuring the app to use the RestTestServer
+# Going through the steps
 
-Usually we would add a Setting parameter for the base and target URL. therefore the most direct solution is to create the global static Settings object and use a backdoor to change it from our tests. 
-here is the example for iOS.
-
-~~~csharp
-        [Export("SpecflowBackdoor:")]
-        public NSString SpecflowBackdoor(NSString json)
-        {
-            JObject command = JObject.Parse(json.ToString());
-            switch ((string)command["key"])
-            {
-                case "SetTarget":
-                    Helpers.Settings.TargetURI = (string)command["payload"];
-                    return new NSString("Target Set");
-                default:
-                    return new NSString("Unknown key " + (string)command["key"]);
-            }
-        }
-~~~
-
-Once the app is set, we need to tap the button to call the api and see that the method has been called with HttpMethod.GET. as usual, this would require a button whose command is bound to a RelayCommand in the MainPage ViewModel, running a method that uses [RestSharp][] to call the api. since the delegate for the route will change a class variable, we could wait for this change and ensure that the api has been called.
+The following is the completed code for the test steps, which we will put in Scenario01.cs file (a Specflow.Specflow Step Defintion) under Specflow.Steps.WebCommunications
 
 ~~~csharp
-	[Given(@"I have configured the app for use of REST server endpoint")]
-        public void GivenIHaveConfiguredTheAppForUseOfRESTServerEndpoint()
-        {
-            var target = $"http://{HostAddress()}:{RestServer.Port}{restEndpoint}";
-            var command = new JObject(new JProperty("key","SetTarget"),
-                                      new JProperty("payload", target));
-            Invoke("SpecflowBackdoor", command.ToString()).ShouldEqual("Target Set");
-        }
+[Binding]
+public class Scenario01 : StepsBase
+{
+    [Given(@"I am running a RestTestServer")]
+    public void GivenIAmRunningARestTestServer()
+    {
+        var RestServer = new RestTestServer(RestCalls.RestPort);
+        Context.Set<RestTestServer>(RestServer);
+    }
 
-        [Given(@"Am in the main page")]
-        public void GivenAmInTheMainPage()
+    [Given(@"I have a button on Mainpage to call RestTestServer")]
+    public void GivenIHaveAButtonOnMainpageToCallRestTestServer()
+    {
+        app.WaitForElement(AddOrGetPageTO<MainPageTO>().RestApiButton);
+    }
+    [Given(@"I have configured the App for RestCall")]
+    public void GivenIHaveConfiguredTheAppForRestCall()
+    {
+        var RestServer = Context.Get<RestTestServer>();
+        AddOrGetPageTO<MainPageTO>()
+            .Invoke(Backdoor.SetRestInfo,
+                   RestServer.GetUrl(RestCalls.TestEndPoint + RestCalls.QueryString));
+    }
+    [Given(@"I have registered an endpoint with the RestTestServer")]
+    public void GivenIHaveRegisteredAnEndpointWithTheRestTestServer()
+    {
+        Context.Get<RestTestServer>().Register((context) =>
         {
-            app.Query(c => c.Marked("TheMainPage")).Length.ShouldBeGreaterThan(0);
-        }
+            Context.Add(Fixtures.WasCalled, true);
+            Context.Add("QueryString",
+             context.Request.QueryString.GetValue<string>("key1"));
+            context.Response.SendResponse("OK");
+            return context;
+        }, HttpMethod.GET, RestCalls.TestEndPoint);
+    }
 
-        [When(@"I press Send data button")]
-        public void WhenIPressSendDataButton()
-        {
-            app.Tap(c => c.Marked("CallApiButton"));
-        }
-        [Then(@"The server will be called at the endpoint")]
-        public void ThenTheServerWillBeCalledAtTheEndpoint()
-        {
-            app.WaitFor(
-                () => calledMethod != HttpMethod.ALL,
-                "Didn't Call the endpoint"
-            );
-            calledMethod.ShouldEqual(HttpMethod.GET);
-        }
+    [When(@"I tap the button")]
+    public void WhenITapTheButton()
+    {
+        app.Tap(AddOrGetPageTO<MainPageTO>().RestApiButton);
+    }
+
+    [Then(@"The RestTestServer is called with correct payload")]
+    public void ThenTheRestTestServerIsCalledWithCorrectPayload()
+    {
+        app.WaitFor(() => Context.ContainsKey(Fixtures.WasCalled),
+                   "RestTestServer was not called!");
+        Context.Get<string>("QueryString").ShouldEqual(RestCalls.QueryString);
+    }
+
+}
 ~~~
+
+looking at the code above, to pass the steps we need to implement the following:
+
+* A Button on the Main Page that would call the Api Service
+
+~~~xml
+<?xml version="1.0" encoding="UTF-8"?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms" 
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" 
+    xmlns:static ="clr-namespace:MVVMFramework.Statics;assembly=MVVMFramework"
+    x:Class="example.Pages.MainPage">
+	<ContentPage.Content>
+        <StackLayout Padding="30">
+            <Button AutomationId="{x:Static static:UUID.RestApiButton}"
+                Text="{x:Static static:UIStrings.RestApiButton}"
+                Command="{Binding RestApiCommand}"/>
+        </StackLayout>
+	</ContentPage.Content>
+</ContentPage>
+~~~
+
+* The Api Service that would use the Settings to find the endpoint and make the call. We put a RestService.cs in Services directory under example in the shared project.
+
+~~~csharp
+public class RestService
+{
+    public async Task<string> Call()
+    {
+        if (!CheckConnectivity())
+            return "";
+        var Client = new RestSharp.RestClient(Settings.ServerUrl);
+        var request = new RestRequest(RestCalls.TestEndPoint);
+        request.AddParameter("key1", "value1");
+        request.AddParameter("key2", "value2");
+        var response = await Client.ExecuteGetTaskAsync(request);
+        return response.Content;
+    }
+
+    public bool CheckConnectivity() => !CrossConnectivity.IsSupported ||
+                                 !CrossConnectivity.Current.IsConnected;
+}
+~~~
+
+* A backdoor to allow the test to divert the call to our Test Server
+
+~~~csharp
+public static string Execute(JObject msg){
+    switch((string)msg[Backdoor.Key]){
+        case Backdoor.SetRestInfo:
+            Settings.ServerUrl = (string)msg[Backdoor.Payload];
+            break;
+        default:
+            return "Unknown Key: " + (string)msg[Backdoor.Key];
+    }
+    return "OK";
+}
+~~~
+
+The Settings branch and the AppSettings.md file in the Docs directory have more information about how to Setup Backdoors.
+
+# Next Steps
+
+* For Webservice connectivity the same approach can be taken by using [Websocket Clients][] and tested with [Websocket Listener][].
+
+* For AMQP message brokers, the same approach can be taken by using [AMQP NET lite][] which contains a [Test AMQP Broker][] so that it won't be necessary to have a full installation of RabbitMQ, Apache ActiveMQ or some similar application just for testing.
+
+  
 
 [RestSharp]: https://www.nuget.org/packages/RestSharp
 [Newtonsoft Json]: https://www.newtonsoft.com/json
 [Json.Net]: https://www.newtonsoft.com/json/help/html/Introduction.htm
 [samples]:https://www.newtonsoft.com/json/help/html/SerializeObject.htm
 [Grapevine]: https://sukona.github.io/Grapevine/en/
-
+[Connectivity Plugin]: https://github.com/jamesmontemagno/ConnectivityPlugin
+[Websocket Clients]: https://blog.xamarin.com/developing-real-time-communication-apps-with-websocket/
+[Websocket Listener]: http://vtortola.github.io/WebSocketListener/
+[AMQP NET lite]: https://github.com/Azure/amqpnetlite/blob/master/docs/articles/hello_amqp.md
+[Test AMQP Broker]: https://github.com/Azure/amqpnetlite/blob/master/test/Common/TestAmqpBroker.cs

@@ -57,6 +57,10 @@
     <None Include="packages.config" />
     <None Include="App.config" />
     <None Include="Features\SanityTest.feature" />
+    <None Include="Features\WebCommunications.feature">
+      <Generator>SpecFlowSingleFileGenerator</Generator>
+      <LastGenOutput>WebCommunications.feature.cs</LastGenOutput>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\iOS\example.iOS.csproj">
@@ -91,6 +95,14 @@
     <Compile Include="_init\InstrumentsRunner.cs" />
     <Compile Include="_init\Simulator.cs" />
     <Compile Include="_init\TestHelpers.cs" />
+    <Compile Include="Features\WebCommunications.feature.cs">
+      <DependentUpon>WebCommunications.feature</DependentUpon>
+    </Compile>
+    <Compile Include="Features\WebCommunicationsFeature.cs" />
+    <Compile Include="Steps\WebCommunications\Scenario01.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Steps\WebCommunications\" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

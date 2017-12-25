@@ -1,5 +1,6 @@
 ﻿using System;
 using example.Pages;
+using example.Services;
 using example.ViewModels;
 using MVVMFramework;
 using Xamarin.Forms;
@@ -26,6 +27,7 @@ namespace example
         {
             Initializer.SetupDI();
             Initializer.Register<MainPageVM>();
+            Initializer.Register<RestService>();
         }
 
     } 

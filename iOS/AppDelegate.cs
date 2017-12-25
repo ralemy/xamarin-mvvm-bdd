@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 using Foundation;
+using Newtonsoft.Json.Linq;
 using UIKit;
 
 namespace example.iOS
@@ -22,6 +23,10 @@ namespace example.iOS
 
 
             return base.FinishedLaunching(app, options);
+        }
+        [Export(MVVMFramework.Statics.Fixtures.SpecflowBackdoor+":")]
+        public NSString SpecflowBackdoor(NSString json){
+            return new NSString(Helpers.SpecflowBackdoor.Execute(JObject.Parse(json)));
         }
     }
 }
