@@ -1,6 +1,8 @@
 ﻿using TechTalk.SpecFlow;
 using Xamarin.UITest;
 using Specflow.Server;
+using Specflow.PageTestObjects;
+using System;
 
 namespace Specflow.Steps
 {
