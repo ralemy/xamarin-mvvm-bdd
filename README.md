@@ -1,3 +1,7 @@
+# You are on the Barcode Branch
+
+The **Barcode** branch demonstrates the use of Zxing libraries to turn the phone camera into a barcode scanner. 
+
 # Xamarin MVVM App delevopment using BDD
 
 This is an effort to provide step by step demonstration of how to develop a Xamarin app for iOS and Android using MVVM architecture and Behaviour Driven Development Methodology. 
