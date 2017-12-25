@@ -1,3 +1,15 @@
+# You are on the RestClient Branch
+
+The **RestClient Branch** was checkedout from _Boilerplate.V1.2_ tag. It demonstrates the following techniques
+
+* Accessing an Web resource by using HTTP calls, including use of RESTful services
+* BDD testing of Web access by running mock servers and registering mock endpoints that would verify correct construction and consumption of Web resources
+* Checking the connectivity of the device to the Internet
+* Passing the mock server address to simulators and physical devices
+* References for consuming Websockets and AMQP messages.
+
+The RestClient.md file contains the specifics of the above.
+
 # Xamarin MVVM App delevopment using BDD
 
 This is an effort to provide step by step demonstration of how to develop a Xamarin app for iOS and Android using MVVM architecture and Behaviour Driven Development Methodology. 
@@ -17,6 +29,17 @@ The **Settings Branch** was checked out from _Boilerplate.V1.1_ tag. it demonstr
 * Allowing time for UI and Backend update in tests
 
 Based on the experience of this branch, a new _Boilerplate.V1.2_ tag is created, from which the future branches are checked out.
+The AppSettings.md file contains the specifics of the above. the more up to date version of the file can be found in the branch.
+
+The **RestClient Branch** was checkedout from _Boilerplate.V1.2_ tag. It demonstrates the following techniques
+
+* Accessing an Web resource by using HTTP calls, including use of RESTful services
+* BDD testing of Web access by running mock servers and registering mock endpoints that would verify correct construction and consumption of Web resources
+* Checking the connectivity of the device to the Internet
+* Passing the mock server address to simulators and physical devices
+* References for consuming Websockets and AMQP messages.
+
+The RestClient.md file contains the specifics of the above. the more up to date version of the file can be found in the branch.
 
 
 # Credits
