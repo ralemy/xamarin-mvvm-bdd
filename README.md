@@ -30,6 +30,16 @@ The **RestClient Branch** was checkedout from _Boilerplate.V1.2_ tag. It demonst
 
 The RestClient.md file contains the specifics of the above. the more up to date version of the file can be found in the branch.
 
+The **Barcode** branch was checked out from _Boilerplate.V1.2_ tag and demonstrates the use of Zxing libraries to turn the phone camera into a barcode scanner. 
+
+This page Demonstraties the following Techniques:
+
+* Overlaying two views using the Grid compoinent
+* Using the ZXing libraries to scan a barcode
+* Delegating events and properties to ViewModel
+* Running code on UI Thread
+
+The Barcode.md file contains the specifics of the above. the more up to date version of the file can be found in the branch.
 
 # Credits
 
