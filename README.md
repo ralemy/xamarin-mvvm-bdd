@@ -1,6 +1,6 @@
 # You are on the Barcode Branch
 
-The **Barcode** branch demonstrates the use of Zxing libraries to turn the phone camera into a barcode scanner. 
+The **Barcode** branch was checked out from _Boilerplate.V1.2_ tag and demonstrates the use of Zxing libraries to turn the phone camera into a barcode scanner. 
 
 This page Demonstraties the following Techniques:
 
