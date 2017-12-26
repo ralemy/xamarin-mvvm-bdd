@@ -468,8 +468,7 @@ The Settings branch and the AppSettings.md file in the Docs directory have more 
 * For Webservice connectivity the same approach can be taken by using [Websocket Clients][] and tested with [Websocket Listener][].
 
 * For AMQP message brokers, the same approach can be taken by using [AMQP NET lite][] which contains a [Test AMQP Broker][] so that it won't be necessary to have a full installation of RabbitMQ, Apache ActiveMQ or some similar application just for testing.
-
-  
+  * However, it is noteworthy that getting RabbitMQ to work on Xamarin based mobile projects is tricky at the moment. it may be best to defer until better tools are available.
 
 [RestSharp]: https://www.nuget.org/packages/RestSharp
 [Newtonsoft Json]: https://www.newtonsoft.com/json
